@@ -165,7 +165,8 @@ Modern, responsive web interface with glassmorphism design.
 ## 6. System Architecture
 
 ### 6.1 High-Level Architecture
-  ```Client Layer (Web Browser)
+  ```
+  Client Layer (Web Browser)
               ↓
   Presentation Layer (Flask Templates)
               ↓
