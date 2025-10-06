@@ -1,0 +1,55 @@
+<div class="path-card glass-card">
+    <div class="path-header">
+        <h3 class="path-title">{{ path_data.path.title }}</h3>
+        <div class="path-meta">
+            <span class="goal-tag">{{ path_data.path.career_goal }}</span>
+            <span class="level-tag">{{ path_data.path.current_level }}</span>
+        </div>
+    </div>
+    
+    <div class="path-description">
+        <p>{{ path_data.path.description[:150] }}{% if path_data.path.description|length > 150 %}...{% endif %}</p>
+    </div>
+    
+    <div class="path-stats">
+        <div class="stat">
+            <i class="fas fa-clock"></i>
+            <span>{{ path_data.path.timeline_weeks }} weeks</span>
+        </div>
+        <div class="stat">
+            <i class="fas fa-list-ol"></i>
+            <span>{{ path_data.path.steps|length }} steps</span>
+        </div>
+        <div class="stat">
+            <i class="fas fa-calendar-week"></i>
+            <span>{{ path_data.path.weekly_hours }}h/week</span>
+        </div>
+    </div>
+    
+    <div class="path-progress">
+        <div class="progress-ring">
+            <svg width="60" height="60" viewBox="0 0 60 60">
+                <circle class="progress-ring-background" cx="30" cy="30" r="26" stroke-width="4"></circle>
+                <circle class="progress-ring-circle" cx="30" cy="30" r="26" stroke-width="4" 
+                        stroke-dasharray="163.36" 
+                        stroke-dashoffset="{{ 163.36 * (1 - path_data.completion_percentage / 100) }}"></circle>
+            </svg>
+            <div class="progress-text">{{ path_data.completion_percentage }}%</div>
+        </div>
+        <div class="progress-info">
+            <span class="progress-label">Completion</span>
+            <div class="progress-bar">
+                <div class="progress-fill" style="width: {{ path_data.completion_percentage }}%"></div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="path-actions">
+        <a href="{{ url_for('path_detail', id=path_data.path.id) }}" class="btn btn-primary">
+            <i class="fas fa-eye"></i> View Path
+        </a>
+        <button class="btn btn-secondary share-path" data-path-id="{{ path_data.path.id }}">
+            <i class="fas fa-share-alt"></i> Share
+        </button>
+    </div>
+</div>
