@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="generate-path-container">
+    <div class="generate-header">
+        <h1>Create Your Learning Path</h1>
+        <p>Tell us about your goals and we'll generate a personalized roadmap</p>
+    </div>
+
+    <form method="POST" class="path-form glass-card">
+        <div class="form-row">
+            <div class="form-group">
+                <label for="career_goal">
+                    <i class="fas fa-bullseye"></i> Career Goal
+                </label>
+                <input type="text" id="career_goal" name="career_goal" required 
+                       placeholder="e.g., Full Stack Developer, Data Scientist, UX Designer">
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label for="current_level">
+                    <i class="fas fa-chart-line"></i> Current Skill Level
+                </label>
+                <select id="current_level" name="current_level" required>
+                    <option value="">Select your current level</option>
+                    <option value="beginner">Beginner (0-1 years)</option>
+                    <option value="intermediate">Intermediate (1-3 years)</option>
+                    <option value="advanced">Advanced (3+ years)</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group full-width">
+                <label for="interests">
+                    <i class="fas fa-heart"></i> Interests & Focus Areas
+                </label>
+                <textarea id="interests" name="interests" required 
+                          placeholder="Describe your specific interests within this field, preferred learning styles, any particular technologies or methodologies you're interested in..."></textarea>
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label for="weekly_hours">
+                    <i class="fas fa-clock"></i> Weekly Study Hours
+                </label>
+                <input type="number" id="weekly_hours" name="weekly_hours" required 
+                       min="1" max="40" value="10"
+                       placeholder="Hours per week you can dedicate">
+            </div>
+
+            <div class="form-group">
+                <label for="timeline_weeks">
+                    <i class="fas fa-calendar"></i> Timeline (Weeks)
+                </label>
+                <input type="number" id="timeline_weeks" name="timeline_weeks" required 
+                       min="4" max="104" value="12"
+                       placeholder="Total weeks for completion">
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary btn-large">
+                <i class="fas fa-magic"></i> Generate AI Learning Path
+            </button>
+        </div>
+    </form>
+
+    <div class="ai-preview glass-card">
+        <h3>How It Works</h3>
+        <div class="preview-steps">
+            <div class="preview-step">
+                <div class="step-number">1</div>
+                <div class="step-content">
+                    <h4>AI Analysis</h4>
+                    <p>Our AI analyzes your goals, experience, and constraints</p>
+                </div>
+            </div>
+            <div class="preview-step">
+                <div class="step-number">2</div>
+                <div class="step-content">
+                    <h4>Path Generation</h4>
+                    <p>Creates a structured learning path with milestones</p>
+                </div>
+            </div>
+            <div class="preview-step">
+                <div class="step-number">3</div>
+                <div class="step-content">
+                    <h4>Resource Curation</h4>
+                    <p>Recommends the best learning materials and projects</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
