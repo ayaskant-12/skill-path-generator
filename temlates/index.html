@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="hero">
+    <div class="hero-background">
+        <div class="floating-shapes">
+            <div class="shape shape-1"></div>
+            <div class="shape shape-2"></div>
+            <div class="shape shape-3"></div>
+        </div>
+    </div>
+    
+    <div class="hero-content">
+        <div class="hero-text">
+            <h1 class="hero-title">
+                Master Your Future with
+                <span class="gradient-text">AI-Powered Learning Paths</span>
+            </h1>
+            <p class="hero-description">
+                Transform your career goals into actionable, personalized learning roadmaps. 
+                Our AI companion creates customized skill development paths tailored to your unique journey.
+            </p>
+            <div class="hero-actions">
+                {% if session.user_id %}
+                    <a href="{{ url_for('dashboard') }}" class="btn btn-primary btn-large">
+                        <i class="fas fa-tachometer-alt"></i> Go to Dashboard
+                    </a>
+                {% else %}
+                    <a href="{{ url_for('signup') }}" class="btn btn-primary btn-large">
+                        <i class="fas fa-rocket"></i> Start Your Journey
+                    </a>
+                    <a href="{{ url_for('login') }}" class="btn btn-secondary btn-large">
+                        <i class="fas fa-sign-in-alt"></i> Sign In
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="hero-visual">
+            <div class="floating-card card-1 glass-card">
+                <i class="fas fa-robot"></i>
+                <h4>AI-Powered</h4>
+                <p>Smart path generation</p>
+            </div>
+            <div class="floating-card card-2 glass-card">
+                <i class="fas fa-road"></i>
+                <h4>Personalized</h4>
+                <p>Customized to your goals</p>
+            </div>
+            <div class="floating-card card-3 glass-card">
+                <i class="fas fa-chart-line"></i>
+                <h4>Track Progress</h4>
+                <p>Monitor your growth</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="features">
+    <div class="container">
+        <h2 class="section-title">Why Choose SkillPath AI?</h2>
+        
+        <div class="features-grid">
+            <div class="feature-card glass-card">
+                <div class="feature-icon">
+                    <i class="fas fa-brain"></i>
+                </div>
+                <h3>Intelligent Planning</h3>
+                <p>Our AI analyzes your goals, experience, and timeline to create the perfect learning sequence.</p>
+            </div>
+            
+            <div class="feature-card glass-card">
+                <div class="feature-icon">
+                    <i class="fas fa-gem"></i>
+                </div>
+                <h3>Curated Resources</h3>
+                <p>Access the best learning materials, courses, and projects recommended specifically for you.</p>
+            </div>
+            
+            <div class="feature-card glass-card">
+                <div class="feature-icon">
+                    <i class="fas fa-tachometer-alt"></i>
+                </div>
+                <h3>Progress Tracking</h3>
+                <p>Monitor your advancement with detailed progress metrics and completion analytics.</p>
+            </div>
+            
+            <div class="feature-card glass-card">
+                <div class="feature-icon">
+                    <i class="fas fa-calendar-alt"></i>
+                </div>
+                <h3>Flexible Scheduling</h3>
+                <p>Adapt your learning path to fit your weekly schedule and preferred pace.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="cta-section">
+    <div class="container">
+        <div class="cta-content glass-card">
+            <h2>Ready to Transform Your Career?</h2>
+            <p>Join thousands of learners who are mastering new skills with AI-guided paths.</p>
+            {% if not session.user_id %}
+                <a href="{{ url_for('signup') }}" class="btn btn-primary btn-large">
+                    <i class="fas fa-rocket"></i> Create Free Account
+                </a>
+            {% else %}
+                <a href="{{ url_for('generate_path') }}" class="btn btn-primary btn-large">
+                    <i class="fas fa-plus"></i> Generate New Path
+                </a>
+            {% endif %}
+        </div>
+    </div>
+</section>
+{% endblock %}
