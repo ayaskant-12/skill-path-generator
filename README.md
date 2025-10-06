@@ -59,3 +59,137 @@ A comprehensive AI-powered learning path generator that creates personalized ski
    ```bash
    git clone https://github.com/yourusername/skill-path-generator.git
    cd skill-path-generator
+   ```
+2. **Create Virtual Environment**
+
+   ```bash
+   python -m venv venv
+   source venv/bin/activate  # On Windows: venv\Scripts\activate
+   ```
+3. **Install Dependencies**
+
+   ```bash
+   pip install -r requirements.txt
+   Environment Configuration
+   ```
+4. **Create a .env file in the root directory:**
+
+   ```env
+   SECRET_KEY=your-secret-key-here
+   DATABASE_URL=postgresql://username:password@localhost/skill_path_generator
+   OPENAI_API_KEY=your-openai-api-key-here
+   ```
+5. **Database Setup**
+
+   ```bash
+   # Create PostgreSQL database
+   createdb skill_path_generator
+
+   # The application will automatically create tables on first run
+   ```
+6. **Run the Application**
+
+   ```bash
+   python app.py
+   ```
+7. **Access the Application**
+Open your browser and navigate to http://localhost:5000
+#### Default Admin Account
+Username: admin
+
+Password: admin123
+
+## 🗄️ Database Schema
+The application uses the following main models:
+
+**User**: User accounts and authentication
+
+**SkillPath**: Main learning path containers
+
+**PathStep**: Individual steps within learning paths
+
+**Resource**: Learning resources (courses, videos, articles)
+
+**StepResource**: Many-to-many relationship between steps and resources
+
+**Progress**: User progress tracking
+
+**Feedback**: User feedback and ratings
+
+## 🔧 API Endpoints
+### User Routes
+**GET /** - Landing page
+
+**GET/POST /login** - User authentication
+
+**GET/POST /signup** - User registration
+
+**GET /logout** - User logout
+
+**GET /dashboard** - User dashboard
+
+**GET/POST /generate_path** - AI path generation
+
+**GET /path/<id>** - Path detail view
+
+**POST /progress/<step_id>** - Progress updates
+
+### Admin Routes
+**GET /admin/resources** - Resource management
+
+**GET /admin/analytics** - Analytics dashboard
+
+## 🎨 UI/UX Features
+### Design System
+**Glassmorphism**: Semi-transparent cards with backdrop blur
+
+**Neon Accents**: Vibrant color highlights
+
+**Smooth Animations**: CSS transitions and transforms
+
+**Progress Visualization**: Circular and linear progress indicators
+
+### Responsive Breakpoints
+**Mobile**: < 768px
+
+**Tablet**: 768px - 1024px
+
+**Desktop**: > 1024px
+
+## 🤖 AI Integration
+### OpenAI API Usage
+The application uses GPT-4 to generate personalized learning paths based on:
+
+**Career/skill goals**
+
+**Current skill level**
+
+**User interests**
+
+**Available weekly hours**
+
+**Desired timeline**
+
+## 📊 Admin Analytics
+**Available Metrics**
+- **User Statistics**: Total users, active paths
+
+- **Goal Popularity**: Most common career goals
+
+- **Completion Rates**: Success rates by goal type
+
+- **Trending Skills**: Popular learning categories
+
+## 🔒 Security Features
+- Password hashing with Werkzeug
+
+- Session-based authentication
+
+- CSRF protection
+
+- SQL injection prevention with SQLAlchemy
+
+- Input validation and sanitization
+
+## 📄 License
+This project is licensed under the MIT License - see the LICENSE file for details.
