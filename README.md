@@ -102,73 +102,73 @@ Password: admin123
 ## 🗄️ Database Schema
 The application uses the following main models:
 
-**User**: User accounts and authentication
+- **User**: User accounts and authentication
 
-**SkillPath**: Main learning path containers
+- **SkillPath**: Main learning path containers
 
-**PathStep**: Individual steps within learning paths
+- **PathStep**: Individual steps within learning paths
 
-**Resource**: Learning resources (courses, videos, articles)
+- **Resource**: Learning resources (courses, videos, articles)
 
-**StepResource**: Many-to-many relationship between steps and resources
+- **StepResource**: Many-to-many relationship between steps and resources
 
-**Progress**: User progress tracking
+- **Progress**: User progress tracking
 
-**Feedback**: User feedback and ratings
+- **Feedback**: User feedback and ratings
 
 ## 🔧 API Endpoints
 ### User Routes
-**GET /** - Landing page
+- **GET /** - Landing page
 
-**GET/POST /login** - User authentication
+- **GET/POST /login** - User authentication
 
-**GET/POST /signup** - User registration
+- **GET/POST /signup** - User registration
 
-**GET /logout** - User logout
+- **GET /logout** - User logout
 
-**GET /dashboard** - User dashboard
+- **GET /dashboard** - User dashboard
 
-**GET/POST /generate_path** - AI path generation
+- **GET/POST /generate_path** - AI path generation
 
-**GET /path/<id>** - Path detail view
+- **GET /path/<id>** - Path detail view
 
-**POST /progress/<step_id>** - Progress updates
+- **POST /progress/<step_id>** - Progress updates
 
 ### Admin Routes
-**GET /admin/resources** - Resource management
+- **GET /admin/resources** - Resource management
 
-**GET /admin/analytics** - Analytics dashboard
+- **GET /admin/analytics** - Analytics dashboard
 
 ## 🎨 UI/UX Features
 ### Design System
-**Glassmorphism**: Semi-transparent cards with backdrop blur
+- **Glassmorphism**: Semi-transparent cards with backdrop blur
 
-**Neon Accents**: Vibrant color highlights
+- **Neon Accents**: Vibrant color highlights
 
-**Smooth Animations**: CSS transitions and transforms
+- **Smooth Animations**: CSS transitions and transforms
 
-**Progress Visualization**: Circular and linear progress indicators
+- **Progress Visualization**: Circular and linear progress indicators
 
 ### Responsive Breakpoints
-**Mobile**: < 768px
+- **Mobile**: < 768px
 
-**Tablet**: 768px - 1024px
+- **Tablet**: 768px - 1024px
 
-**Desktop**: > 1024px
+- **Desktop**: > 1024px
 
 ## 🤖 AI Integration
 ### OpenAI API Usage
 The application uses GPT-4 to generate personalized learning paths based on:
 
-**Career/skill goals**
+- **Career/skill goals**
 
-**Current skill level**
+- **Current skill level**
 
-**User interests**
+- **User interests**
 
-**Available weekly hours**
+- **Available weekly hours**
 
-**Desired timeline**
+- **Desired timeline**
 
 ## 📊 Admin Analytics
 **Available Metrics**
