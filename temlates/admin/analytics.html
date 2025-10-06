@@ -1,0 +1,905 @@
+{% extends "admin/base_admin.html" %}
+
+{% block title %}Analytics Dashboard - SkillPath Admin{% endblock %}
+{% block page_title %}Analytics Dashboard{% endblock %}
+{% block breadcrumb %}Analytics{% endblock %}
+
+{% block admin_content %}
+<div class="admin-analytics">
+    <!-- Overview Stats -->
+    <div class="analytics-overview">
+        <div class="overview-header glass-card">
+            <div class="header-content">
+                <h1>Platform Analytics</h1>
+                <p>Real-time insights and performance metrics - Updated {{ now.strftime('%Y-%m-%d %H:%M') if now else '' }}</p>
+            </div>
+            <div class="header-actions">
+                <div class="date-range">
+                    <i class="fas fa-calendar"></i>
+                    <select id="dateRange" class="filter-select">
+                        <option value="7d">Last 7 Days</option>
+                        <option value="30d" selected>Last 30 Days</option>
+                        <option value="90d">Last 90 Days</option>
+                        <option value="1y">Last Year</option>
+                    </select>
+                </div>
+                <button class="btn btn-secondary" onclick="exportAnalyticsReport()">
+                    <i class="fas fa-download"></i> Export Report
+                </button>
+            </div>
+        </div>
+        
+        <div class="stats-grid">
+            <div class="stat-card glass-card highlight">
+                <div class="stat-icon">
+                    <i class="fas fa-users"></i>
+                </div>
+                <div class="stat-content">
+                    <span class="stat-number">{{ total_users }}</span>
+                    <span class="stat-label">Total Users</span>
+                    <div class="stat-trend positive">
+                        <i class="fas fa-arrow-up"></i> {{ ((total_users / (total_users - recent_users|length)) - 1) * 100 | round(1) if total_users > recent_users|length else 0 }}% growth
+                    </div>
+                </div>
+            </div>
+            
+            <div class="stat-card glass-card">
+                <div class="stat-icon">
+                    <i class="fas fa-road"></i>
+                </div>
+                <div class="stat-content">
+                    <span class="stat-number">{{ total_paths }}</span>
+                    <span class="stat-label">Learning Paths</span>
+                    <div class="stat-trend positive">
+                        <i class="fas fa-arrow-up"></i> {{ ((total_paths / (total_paths - recent_paths|length)) - 1) * 100 | round(1) if total_paths > recent_paths|length else 0 }}% growth
+                    </div>
+                </div>
+            </div>
+            
+            <div class="stat-card glass-card">
+                <div class="stat-icon">
+                    <i class="fas fa-tasks"></i>
+                </div>
+                <div class="stat-content">
+                    <span class="stat-number">{{ (total_paths * avg_steps_per_path)|round|int }}</span>
+                    <span class="stat-label">Total Steps</span>
+                    <div class="stat-trend positive">
+                        <i class="fas fa-arrow-up"></i> {{ avg_steps_per_path }} avg/path
+                    </div>
+                </div>
+            </div>
+            
+            <div class="stat-card glass-card">
+                <div class="stat-icon">
+                    <i class="fas fa-percentage"></i>
+                </div>
+                <div class="stat-content">
+                    <span class="stat-number">{{ overall_completion_rate }}%</span>
+                    <span class="stat-label">Avg Completion</span>
+                    <div class="stat-trend {{ 'positive' if overall_completion_rate > 50 else 'negative' }}">
+                        <i class="fas fa-arrow-{{ 'up' if overall_completion_rate > 50 else 'down' }}"></i>
+                        {{ (overall_completion_rate - 50) | abs | round(1) }}%
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts and Graphs Section -->
+    <div class="charts-section">
+        <div class="chart-row">
+            <div class="chart-container glass-card">
+                <div class="chart-header">
+                    <h3>User Growth (Last 30 Days)</h3>
+                    <div class="chart-actions">
+                        <button class="btn btn-icon btn-sm" onclick="refreshUserGrowth()">
+                            <i class="fas fa-sync-alt"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="chart-content">
+                    <div class="chart-visual" id="userGrowthChart">
+                        <div class="bar-chart">
+                            {% for growth in user_growth %}
+                            <div class="bar" style="height: {{ (growth.count / (user_growth|map(attribute='count')|max or 1)) * 80 }}%"
+                                 data-value="{{ growth.count }}" data-date="{{ growth.date.strftime('%m/%d') }}">
+                                <span>{{ growth.date.strftime('%m/%d') }}</span>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <div class="chart-stats">
+                        <div class="chart-stat">
+                            <span class="stat-label">New Users</span>
+                            <span class="stat-value">{{ user_growth|sum(attribute='count') }}</span>
+                        </div>
+                        <div class="chart-stat">
+                            <span class="stat-label">Peak Day</span>
+                            <span class="stat-value">{{ (user_growth|max(attribute='count')).count if user_growth else 0 }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="chart-container glass-card">
+                <div class="chart-header">
+                    <h3>Path Completion Rates</h3>
+                    <div class="chart-actions">
+                        <button class="btn btn-icon btn-sm" onclick="refreshCompletionRates()">
+                            <i class="fas fa-sync-alt"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="chart-content">
+                    <div class="completion-chart">
+                        {% for data in completion_data %}
+                        <div class="completion-item">
+                            <span class="label">{{ data.goal[:20] }}{% if data.goal|length > 20 %}...{% endif %}</span>
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: {{ data.completion_rate }}%"></div>
+                            </div>
+                            <span class="percentage">{{ data.completion_rate }}%</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    <div class="chart-stats">
+                        <div class="chart-stat">
+                            <span class="stat-label">Avg Completion</span>
+                            <span class="stat-value">{{ (completion_data|sum(attribute='completion_rate') / completion_data|length if completion_data else 0) | round(1) }}%</span>
+                        </div>
+                        <div class="chart-stat">
+                            <span class="stat-label">Total Paths</span>
+                            <span class="stat-value">{{ completion_data|sum(attribute='total_paths') }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Top Goals Section -->
+    <div class="analytics-section">
+        <div class="section-header glass-card">
+            <div class="header-content">
+                <h3>Top Career Goals</h3>
+                <p>Most popular learning objectives among users</p>
+            </div>
+            <div class="header-badge">
+                <span class="badge">{{ top_goals|length }} Goals</span>
+            </div>
+        </div>
+        
+        <div class="goals-grid">
+            {% for goal in top_goals %}
+            <div class="goal-card glass-card">
+                <div class="goal-rank">
+                    <span class="rank-number">#{{ loop.index }}</span>
+                    <div class="rank-trend {{ 'positive' if loop.index <= 3 else 'neutral' }}">
+                        <i class="fas fa-arrow-{{ 'up' if loop.index <= 3 else 'right' }}"></i>
+                    </div>
+                </div>
+                <div class="goal-content">
+                    <h4>{{ goal.career_goal }}</h4>
+                    <p>{{ goal.count }} learning paths</p>
+                    <div class="goal-meta">
+                        <span class="meta-item">
+                            <i class="fas fa-user"></i>
+                            {{ ((goal.count / total_paths) * 100) | round(1) if total_paths > 0 else 0 }}% of paths
+                        </span>
+                    </div>
+                </div>
+                <div class="goal-progress">
+                    <div class="progress-chart">
+                        <div class="progress-ring">
+                            <svg width="60" height="60" viewBox="0 0 60 60">
+                                <circle class="progress-ring-background" cx="30" cy="30" r="26" stroke-width="4"></circle>
+                                <circle class="progress-ring-circle" cx="30" cy="30" r="26" stroke-width="4" 
+                                        stroke-dasharray="163.36" 
+                                        stroke-dashoffset="{{ 163.36 * (1 - (goal.count / total_paths)) }}"></circle>
+                            </svg>
+                            <div class="progress-text">{{ ((goal.count / total_paths) * 100) | round(1) if total_paths > 0 else 0 }}%</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Resource Analytics -->
+    <div class="analytics-section">
+        <div class="section-header glass-card">
+            <div class="header-content">
+                <h3>Resource Analytics</h3>
+                <p>Learning material usage and distribution</p>
+            </div>
+            <div class="header-badge">
+                <span class="badge">{{ total_resources }} Resources</span>
+            </div>
+        </div>
+        
+        <div class="resources-analytics">
+            <div class="resource-type-distribution glass-card">
+                <h4>Resource Types</h4>
+                <div class="type-chart">
+                    {% for resource_type in resources_by_type %}
+                    <div class="type-item">
+                        <div class="type-info">
+                            <span class="type-name">{{ resource_type.type|title }}</span>
+                            <span class="type-count">{{ resource_type.count }}</span>
+                        </div>
+                        <div class="type-bar">
+                            <div class="type-fill" style="width: {{ (resource_type.count / total_resources * 100) if total_resources > 0 else 0 }}%"></div>
+                        </div>
+                        <span class="type-percentage">{{ ((resource_type.count / total_resources) * 100) | round(1) if total_resources > 0 else 0 }}%</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <div class="resource-stats-grid">
+                <div class="resource-stat glass-card">
+                    <div class="stat-icon primary">
+                        <i class="fas fa-link"></i>
+                    </div>
+                    <div class="stat-content">
+                        <span class="stat-number">{{ avg_resources_per_step }}</span>
+                        <span class="stat-label">Avg Resources/Step</span>
+                    </div>
+                </div>
+                
+                <div class="resource-stat glass-card">
+                    <div class="stat-icon success">
+                        <i class="fas fa-book"></i>
+                    </div>
+                    <div class="stat-content">
+                        <span class="stat-number">{{ resources_by_type|selectattr('type', 'equalto', 'course')|map(attribute='count')|first or 0 }}</span>
+                        <span class="stat-label">Online Courses</span>
+                    </div>
+                </div>
+                
+                <div class="resource-stat glass-card">
+                    <div class="stat-icon warning">
+                        <i class="fas fa-video"></i>
+                    </div>
+                    <div class="stat-content">
+                        <span class="stat-number">{{ resources_by_type|selectattr('type', 'equalto', 'video')|map(attribute='count')|first or 0 }}</span>
+                        <span class="stat-label">Video Tutorials</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Platform Insights -->
+    <div class="analytics-section">
+        <div class="section-header glass-card">
+            <div class="header-content">
+                <h3>Platform Insights</h3>
+                <p>Key metrics and user behavior patterns</p>
+            </div>
+        </div>
+        
+        <div class="insights-grid">
+            <div class="insight-card glass-card">
+                <div class="insight-icon success">
+                    <i class="fas fa-rocket"></i>
+                </div>
+                <div class="insight-content">
+                    <h4>User Engagement</h4>
+                    <div class="insight-metric">{{ active_users }}</div>
+                    <p>Active users in the last 7 days</p>
+                </div>
+            </div>
+            
+            <div class="insight-card glass-card">
+                <div class="insight-icon primary">
+                    <i class="fas fa-sitemap"></i>
+                </div>
+                <div class="insight-content">
+                    <h4>Path Complexity</h4>
+                    <div class="insight-metric">{{ avg_steps_per_path }} steps</div>
+                    <p>Average steps per learning path</p>
+                </div>
+            </div>
+            
+            <div class="insight-card glass-card">
+                <div class="insight-icon warning">
+                    <i class="fas fa-link"></i>
+                </div>
+                <div class="insight-content">
+                    <h4>Resource Usage</h4>
+                    <div class="insight-metric">{{ avg_resources_per_step }}/step</div>
+                    <p>Average resources per learning step</p>
+                </div>
+            </div>
+            
+            <div class="insight-card glass-card">
+                <div class="insight-icon info">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+                <div class="insight-content">
+                    <h4>Trending Skills</h4>
+                    <div class="insight-metric">{{ trending_skills|length }}</div>
+                    <p>Active skill categories this month</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Activity -->
+    <div class="analytics-section">
+        <div class="section-header glass-card">
+            <div class="header-content">
+                <h3>Recent Activity</h3>
+                <p>Latest user actions and system events</p>
+            </div>
+        </div>
+        
+        <div class="activity-grid">
+            <div class="recent-users glass-card">
+                <h4>New Users</h4>
+                <div class="user-list">
+                    {% for user in recent_users %}
+                    <div class="user-item">
+                        <div class="user-avatar">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <div class="user-info">
+                            <strong>{{ user.username }}</strong>
+                            <span>Joined {{ user.created_at.strftime('%b %d, %Y') }}</span>
+                        </div>
+                        <div class="user-stats">
+                            <span class="paths-count">{{ user.skill_paths|length }} paths</span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <div class="recent-paths glass-card">
+                <h4>Recent Paths</h4>
+                <div class="path-list">
+                    {% for path in recent_paths %}
+                    <div class="path-item">
+                        <div class="path-icon">
+                            <i class="fas fa-road"></i>
+                        </div>
+                        <div class="path-info">
+                            <strong>{{ path.career_goal }}</strong>
+                            <span>By {{ path.user.username }}</span>
+                        </div>
+                        <div class="path-stats">
+                            <span class="steps-count">{{ path.steps|length }} steps</span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Trending Skills -->
+    <div class="analytics-section">
+        <div class="section-header glass-card">
+            <div class="header-content">
+                <h3>Trending Skills</h3>
+                <p>Most popular learning categories this month</p>
+            </div>
+        </div>
+        
+        <!-- In the trending skills section, update the loop: -->
+<div class="trending-grid">
+    {% for skill in trending_skills %}
+    <div class="trending-card glass-card">
+        <div class="trending-rank">
+            <span class="rank-badge">#{{ loop.index }}</span>
+        </div>
+        <div class="trending-content">
+            <h4>{{ skill.career_goal }}</h4>
+            <div class="trending-stats">
+                <div class="trend-stat">
+                    <i class="fas fa-road"></i>
+                    <span>{{ skill.count }} paths</span>
+                </div>
+                <div class="trend-stat">
+                    <i class="fas fa-percentage"></i>
+                    <span>{{ skill.completion_rate }}% completion</span>
+                </div>
+            </div>
+        </div>
+        <div class="trending-growth">
+            <div class="growth-indicator {{ 'high' if skill.count > 10 else 'medium' if skill.count > 5 else 'low' }}">
+                <i class="fas fa-arrow-up"></i>
+                <span>{{ (skill.count / (trending_skills|sum(attribute='count') or 1) * 100) | round(1) }}%</span>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+    </div>
+</div>
+{% endblock %}
+
+{% block admin_scripts %}
+<script>
+// Initialize analytics charts and interactions
+document.addEventListener('DOMContentLoaded', function() {
+    initializeAnalyticsCharts();
+    initializeDateRangeSelector();
+    initializeRealTimeUpdates();
+});
+
+function initializeAnalyticsCharts() {
+    // Animate progress rings
+    const progressRings = document.querySelectorAll('.progress-ring-circle');
+    progressRings.forEach(ring => {
+        const radius = ring.r.baseVal.value;
+        const circumference = radius * 2 * Math.PI;
+        
+        ring.style.strokeDasharray = `${circumference} ${circumference}`;
+        ring.style.strokeDashoffset = circumference;
+        
+        const progressText = ring.parentElement.querySelector('.progress-text');
+        const progressValue = progressText ? parseFloat(progressText.textContent) : 0;
+        const offset = circumference - (progressValue / 100 * circumference);
+        
+        setTimeout(() => {
+            ring.style.strokeDashoffset = offset;
+        }, 500);
+    });
+    
+    // Animate completion bars
+    const completionBars = document.querySelectorAll('.progress-fill, .bar-fill, .type-fill');
+    completionBars.forEach(bar => {
+        const width = bar.style.width;
+        bar.style.width = '0%';
+        setTimeout(() => {
+            bar.style.width = width;
+        }, 800);
+    });
+
+    // Initialize bar chart tooltips
+    initializeBarChartTooltips();
+}
+
+function initializeBarChartTooltips() {
+    const bars = document.querySelectorAll('.bar-chart .bar');
+    bars.forEach(bar => {
+        bar.addEventListener('mouseenter', function() {
+            const value = this.getAttribute('data-value');
+            const date = this.getAttribute('data-date');
+            showTooltip(this, `${date}: ${value} users`);
+        });
+        
+        bar.addEventListener('mouseleave', function() {
+            hideTooltip();
+        });
+    });
+}
+
+function showTooltip(element, text) {
+    let tooltip = document.getElementById('chart-tooltip');
+    if (!tooltip) {
+        tooltip = document.createElement('div');
+        tooltip.id = 'chart-tooltip';
+        tooltip.className = 'chart-tooltip';
+        document.body.appendChild(tooltip);
+    }
+    
+    tooltip.innerHTML = text;
+    tooltip.style.display = 'block';
+    
+    const rect = element.getBoundingClientRect();
+    tooltip.style.left = (rect.left + rect.width / 2) + 'px';
+    tooltip.style.top = (rect.top - 40) + 'px';
+}
+
+function hideTooltip() {
+    const tooltip = document.getElementById('chart-tooltip');
+    if (tooltip) {
+        tooltip.style.display = 'none';
+    }
+}
+
+function initializeDateRangeSelector() {
+    const dateRange = document.getElementById('dateRange');
+    dateRange.addEventListener('change', function() {
+        showAdminToast(`Loading data for ${this.options[this.selectedIndex].text}...`, 'info');
+        // In real implementation, reload data based on date range
+        setTimeout(() => {
+            showAdminToast('Data updated successfully', 'success');
+        }, 1500);
+    });
+}
+
+function refreshUserGrowth() {
+    showAdminToast('Refreshing user growth data...', 'info');
+    setTimeout(() => {
+        showAdminToast('User growth data updated', 'success');
+    }, 1000);
+}
+
+function refreshCompletionRates() {
+    showAdminToast('Refreshing completion rates...', 'info');
+    setTimeout(() => {
+        showAdminToast('Completion rates updated', 'success');
+    }, 1000);
+}
+
+function initializeRealTimeUpdates() {
+    // Simulate real-time updates
+    setInterval(() => {
+        updateLiveStats();
+    }, 30000); // Update every 30 seconds
+}
+
+function updateLiveStats() {
+    // Animate stat updates
+    const stats = document.querySelectorAll('.stat-number');
+    stats.forEach(stat => {
+        const current = parseInt(stat.textContent.replace(/,/g, ''));
+        const change = Math.floor(Math.random() * 3); // Small random changes
+        const newValue = current + change;
+        
+        animateValue(stat, current, newValue, 1000);
+    });
+}
+
+function animateValue(element, start, end, duration) {
+    let startTimestamp = null;
+    const step = (timestamp) => {
+        if (!startTimestamp) startTimestamp = timestamp;
+        const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+        const value = Math.floor(progress * (end - start) + start);
+        element.textContent = value.toLocaleString();
+        if (progress < 1) {
+            window.requestAnimationFrame(step);
+        }
+    };
+    window.requestAnimationFrame(step);
+}
+
+// Export functionality
+function exportAnalyticsReport() {
+    showAdminToast('Generating analytics report...', 'info');
+    // Simulate report generation
+    setTimeout(() => {
+        const link = document.createElement('a');
+        link.download = `skillpath-analytics-${new Date().toISOString().split('T')[0]}.csv`;
+        link.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(generateCSVData());
+        link.click();
+        showAdminToast('Analytics report exported successfully!', 'success');
+    }, 2000);
+}
+
+function generateCSVData() {
+    // Generate simple CSV data for demo
+    const headers = ['Metric', 'Value', 'Timestamp'];
+    const data = [
+        ['Total Users', {{ total_users }}, new Date().toISOString()],
+        ['Total Paths', {{ total_paths }}, new Date().toISOString()],
+        ['Overall Completion Rate', {{ overall_completion_rate }} + '%', new Date().toISOString()],
+        ['Average Steps Per Path', {{ avg_steps_per_path }}, new Date().toISOString()],
+        ['Active Users (7 days)', {{ active_users }}, new Date().toISOString()]
+    ];
+    
+    return [headers, ...data].map(row => row.join(',')).join('\n');
+}
+
+// Toast notification function
+function showAdminToast(message, type = 'info') {
+    // Create toast container if it doesn't exist
+    let container = document.getElementById('admin-toast-container');
+    if (!container) {
+        container = document.createElement('div');
+        container.id = 'admin-toast-container';
+        container.style.cssText = `
+            position: fixed;
+            top: 100px;
+            right: 20px;
+            z-index: 10000;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        `;
+        document.body.appendChild(container);
+    }
+    
+    const toast = document.createElement('div');
+    toast.className = `admin-toast toast-${type}`;
+    toast.innerHTML = `
+        <div class="toast-content">
+            <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}"></i>
+            <span>${message}</span>
+        </div>
+        <button class="toast-close" onclick="this.parentElement.remove()">
+            <i class="fas fa-times"></i>
+        </button>
+    `;
+    
+    container.appendChild(toast);
+    
+    // Auto remove after 5 seconds
+    setTimeout(() => {
+        if (toast.parentElement) {
+            toast.remove();
+        }
+    }, 5000);
+}
+</script>
+
+<style>
+.chart-content {
+    padding: 1rem;
+}
+
+.chart-stats {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--glass-border);
+}
+
+.chart-stat {
+    text-align: center;
+}
+
+.chart-stat .stat-label {
+    display: block;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    margin-bottom: 0.25rem;
+}
+
+.chart-stat .stat-value {
+    display: block;
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--primary-color);
+}
+
+.resources-analytics {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 1.5rem;
+}
+
+.resource-type-distribution {
+    padding: 1.5rem;
+}
+
+.type-chart {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.type-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.type-info {
+    display: flex;
+    justify-content: space-between;
+    flex: 1;
+    min-width: 120px;
+}
+
+.type-name {
+    font-weight: 600;
+}
+
+.type-count {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+.type-bar {
+    flex: 2;
+    height: 8px;
+    background: var(--glass-border);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.type-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--primary-color), var(--accent-color));
+    border-radius: 4px;
+    transition: width 1s ease;
+}
+
+.type-percentage {
+    min-width: 50px;
+    text-align: right;
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.resource-stats-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.resource-stat {
+    padding: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.activity-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+}
+
+.recent-users, .recent-paths {
+    padding: 1.5rem;
+}
+
+.user-list, .path-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.user-item, .path-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: var(--border-radius-sm);
+    border: 1px solid var(--glass-border);
+}
+
+.user-avatar, .path-icon {
+    width: 40px;
+    height: 40px;
+    background: var(--glass-bg);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--primary-color);
+}
+
+.user-info, .path-info {
+    flex: 1;
+}
+
+.user-info strong, .path-info strong {
+    display: block;
+    margin-bottom: 0.25rem;
+}
+
+.user-info span, .path-info span {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+
+.user-stats, .path-stats {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+
+.trending-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1rem;
+}
+
+.trending-card {
+    padding: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.trending-rank {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.rank-badge {
+    width: 40px;
+    height: 40px;
+    background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    color: white;
+}
+
+.trending-content {
+    flex: 1;
+}
+
+.trending-content h4 {
+    margin: 0 0 0.5rem 0;
+    font-size: 1.1rem;
+}
+
+.trending-stats {
+    display: flex;
+    gap: 1rem;
+}
+
+.trend-stat {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+
+.trending-growth {
+    display: flex;
+    align-items: center;
+}
+
+.growth-indicator {
+    padding: 0.5rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.growth-indicator.high {
+    background: rgba(16, 185, 129, 0.1);
+    color: var(--success-color);
+    border: 1px solid rgba(16, 185, 129, 0.2);
+}
+
+.growth-indicator.medium {
+    background: rgba(245, 158, 11, 0.1);
+    color: var(--warning-color);
+    border: 1px solid rgba(245, 158, 11, 0.2);
+}
+
+.growth-indicator.low {
+    background: rgba(99, 102, 241, 0.1);
+    color: var(--primary-color);
+    border: 1px solid rgba(99, 102, 241, 0.2);
+}
+
+.chart-tooltip {
+    position: fixed;
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--border-radius-sm);
+    padding: 0.5rem 1rem;
+    font-size: 0.8rem;
+    color: var(--text-primary);
+    z-index: 10000;
+    display: none;
+    box-shadow: var(--glass-shadow);
+}
+
+@media (max-width: 768px) {
+    .resources-analytics,
+    .activity-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .trending-grid {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+{% endblock %}
