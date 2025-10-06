@@ -1,0 +1,186 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="path-detail-container">
+    <div class="path-header glass-card">
+        <div class="path-title-section">
+            <h1>{{ path.title }}</h1>
+            <p class="path-description">{{ path.description }}</p>
+        </div>
+        
+        <div class="path-meta-grid">
+            <div class="meta-item">
+                <i class="fas fa-bullseye"></i>
+                <div class="meta-content">
+                    <span class="meta-label">Career Goal</span>
+                    <span class="meta-value">{{ path.career_goal }}</span>
+                </div>
+            </div>
+            
+            <div class="meta-item">
+                <i class="fas fa-chart-line"></i>
+                <div class="meta-content">
+                    <span class="meta-label">Current Level</span>
+                    <span class="meta-value">{{ path.current_level }}</span>
+                </div>
+            </div>
+            
+            <div class="meta-item">
+                <i class="fas fa-clock"></i>
+                <div class="meta-content">
+                    <span class="meta-label">Timeline</span>
+                    <span class="meta-value">{{ path.timeline_weeks }} weeks</span>
+                </div>
+            </div>
+            
+            <div class="meta-item">
+                <i class="fas fa-calendar-week"></i>
+                <div class="meta-content">
+                    <span class="meta-label">Weekly Hours</span>
+                    <span class="meta-value">{{ path.weekly_hours }}h/week</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="path-progress-overview">
+            <div class="progress-ring-large">
+                <svg width="100" height="100" viewBox="0 0 100 100">
+                    <circle class="progress-ring-background" cx="50" cy="50" r="45" stroke-width="8"></circle>
+                    <circle class="progress-ring-circle" cx="50" cy="50" r="45" stroke-width="8" 
+                            stroke-dasharray="282.74" 
+                            stroke-dashoffset="{{ 282.74 * (1 - completion_percentage / 100) }}"></circle>
+                </svg>
+                <div class="progress-text-large">{{ completion_percentage }}%</div>
+            </div>
+            <div class="progress-stats">
+                <h3>Overall Progress</h3>
+                <p>You're making great progress on your {{ path.career_goal }} journey!</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="learning-path">
+        {% for milestone_group in steps_by_milestone %}
+            <div class="milestone-section">
+                {% if milestone_group.milestone %}
+                    <div class="milestone-header glass-card">
+                        <div class="milestone-icon">
+                            <i class="fas fa-flag-checkered"></i>
+                        </div>
+                        <div class="milestone-content">
+                            <h3>{{ milestone_group.milestone.title }}</h3>
+                            <p>{{ milestone_group.milestone.description }}</p>
+                        </div>
+                    </div>
+                {% endif %}
+                
+                <div class="steps-container">
+                    {% for step in milestone_group.steps %}
+                        <div class="step-item glass-card {% if step.progress.status == 'done' %}completed{% endif %}">
+                            <div class="step-header">
+                                <div class="step-number">
+                                    {{ step.step_number }}
+                                </div>
+                                <div class="step-title">
+                                    <h4>{{ step.title }}</h4>
+                                    <span class="step-duration">{{ step.duration_weeks }} week{{ 's' if step.duration_weeks > 1 }}</span>
+                                </div>
+                                <div class="step-actions">
+                                    <select class="status-select" data-step-id="{{ step.id }}">
+                                        <option value="todo" {% if step.progress.status == 'todo' %}selected{% endif %}>To Do</option>
+                                        <option value="in_progress" {% if step.progress.status == 'in_progress' %}selected{% endif %}>In Progress</option>
+                                        <option value="done" {% if step.progress.status == 'done' %}selected{% endif %}>Completed</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div class="step-description">
+                                <p>{{ step.description }}</p>
+                            </div>
+                            
+                            {% if step.step_resources %}
+                                <div class="step-resources">
+                                    <h5>Learning Resources</h5>
+                                    <div class="resources-grid">
+                                        {% for step_resource in step.step_resources %}
+                                            <div class="resource-item">
+                                                <div class="resource-icon">
+                                                    {% if step_resource.resource.type == 'course' %}
+                                                        <i class="fas fa-graduation-cap"></i>
+                                                    {% elif step_resource.resource.type == 'video' %}
+                                                        <i class="fas fa-video"></i>
+                                                    {% elif step_resource.resource.type == 'book' %}
+                                                        <i class="fas fa-book"></i>
+                                                    {% else %}
+                                                        <i class="fas fa-link"></i>
+                                                    {% endif %}
+                                                </div>
+                                                <div class="resource-content">
+                                                    <a href="{{ step_resource.resource.url }}" target="_blank" class="resource-title">
+                                                        {{ step_resource.resource.title }}
+                                                    </a>
+                                                    <p class="resource-description">{{ step_resource.resource.description }}</p>
+                                                </div>
+                                            </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const statusSelects = document.querySelectorAll('.status-select');
+    
+    statusSelects.forEach(select => {
+        select.addEventListener('change', function() {
+            const stepId = this.dataset.stepId;
+            const status = this.value;
+            
+            fetch(`/progress/${stepId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ status: status })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Update progress ring
+                    const progressRing = document.querySelector('.progress-ring-circle');
+                    const progressText = document.querySelector('.progress-text-large');
+                    
+                    if (progressRing && progressText) {
+                        progressText.textContent = data.completion_percentage + '%';
+                        const circumference = 282.74;
+                        const offset = circumference * (1 - data.completion_percentage / 100);
+                        progressRing.style.strokeDashoffset = offset;
+                    }
+                    
+                    // Update step appearance
+                    const stepItem = this.closest('.step-item');
+                    stepItem.classList.remove('completed', 'in-progress');
+                    if (status === 'done') {
+                        stepItem.classList.add('completed');
+                    } else if (status === 'in_progress') {
+                        stepItem.classList.add('in-progress');
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Error updating progress:', error);
+            });
+        });
+    });
+});
+</script>
+{% endblock %}
