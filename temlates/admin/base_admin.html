@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Admin Portal - Skill Path Generator{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="admin-body">
+    <div class="admin-container">
+        <!-- Admin Sidebar -->
+        <aside class="admin-sidebar glass-card">
+            <div class="sidebar-header">
+                <div class="admin-brand">
+                    <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Admin Logo" class="admin-logo">
+                    <h2>SkillPath <span class="gradient-text">Admin</span></h2>
+                </div>
+                <div class="admin-status">
+                    <div class="status-indicator"></div>
+                    <span>Admin Mode</span>
+                </div>
+            </div>
+            
+            <nav class="sidebar-nav">
+                <a href="{{ url_for('admin_resources') }}" class="nav-item {% if request.endpoint == 'admin_resources' %}active{% endif %}">
+                    <div class="nav-icon">
+                        <i class="fas fa-book"></i>
+                    </div>
+                    <span class="nav-text">Resources</span>
+                    <div class="nav-badge">Manage</div>
+                </a>
+                <a href="{{ url_for('admin_analytics') }}" class="nav-item {% if request.endpoint == 'admin_analytics' %}active{% endif %}">
+                    <div class="nav-icon">
+                        <i class="fas fa-chart-bar"></i>
+                    </div>
+                    <span class="nav-text">Analytics</span>
+                    <div class="nav-badge">Insights</div>
+                </a>
+                <div class="nav-divider"></div>
+                <a href="{{ url_for('dashboard') }}" class="nav-item">
+                    <div class="nav-icon">
+                        <i class="fas fa-arrow-left"></i>
+                    </div>
+                    <span class="nav-text">Back to App</span>
+                </a>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="admin-user-card glass-card">
+                    <div class="user-avatar">
+                        <i class="fas fa-user-shield"></i>
+                    </div>
+                    <div class="user-info">
+                        <strong>{{ session.username }}</strong>
+                        <span>Administrator</span>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="admin-main">
+            <header class="admin-header glass-nav">
+                <div class="header-left">
+                    <button class="sidebar-toggle" id="sidebarToggle">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <h1>{% block page_title %}Admin Dashboard{% endblock %}</h1>
+                    <div class="header-breadcrumb">
+                        <span>Admin Portal</span>
+                        <i class="fas fa-chevron-right"></i>
+                        <span class="breadcrumb-current">{% block breadcrumb %}Dashboard{% endblock %}</span>
+                    </div>
+                </div>
+                <div class="header-right">
+                    <div class="header-actions">
+                        <button class="btn btn-icon" title="Notifications">
+                            <i class="fas fa-bell"></i>
+                            <span class="notification-badge">3</span>
+                        </button>
+                        <button class="btn btn-icon" title="Settings">
+                            <i class="fas fa-cog"></i>
+                        </button>
+                        <a href="{{ url_for('logout') }}" class="btn btn-secondary">
+                            <i class="fas fa-sign-out-alt"></i> Logout
+                        </a>
+                    </div>
+                </div>
+            </header>
+
+            <div class="admin-content">
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        <div class="admin-flash-messages">
+                            {% for category, message in messages %}
+                                <div class="flash-message {{ category }} glass-card">
+                                    <i class="fas fa-{{ 'check-circle' if category == 'success' else 'exclamation-circle' if category == 'error' else 'info-circle' }}"></i>
+                                    {{ message }}
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                {% endwith %}
+
+                {% block admin_content %}{% endblock %}
+            </div>
+        </main>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/admin.js') }}"></script>
+    {% block admin_scripts %}{% endblock %}
+</body>
+</html>
